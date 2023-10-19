@@ -1,0 +1,2 @@
+
+git log --all --since="1 week ago" --pretty=format:'{%n  \"commit\": \"%H\",%n  \"author\": \"%an\",%n  \"date\": \"%ad\",%n  \"message\": \"%B\",%n  \"branch\": \"%D\"%n},' > commits.json
