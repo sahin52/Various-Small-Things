@@ -1,0 +1,93 @@
+// Takes an export from Jira, shows comments and worklogs from it.
+import fs from "fs";
+import { parse } from "csv-parse";
+export interface CsvLine {
+    Summary: string;
+    'Issue key': string;
+    'Issue id': string;
+    'Parent id': string;
+    'Issue Type': string;
+    Status: string;
+    'Project key': string;
+    'Project name': string;
+    'Project type': string;
+    'Project lead': string;
+    'Project description': string;
+    'Project url': string;
+    Priority: string;
+    Resolution: string;
+    Assignee: string;
+    Reporter: string;
+    Creator: string;
+    Created: string;
+    Updated: string;
+    'Last Viewed': string;
+    Resolved: string;
+    'Fix Version/s': string[];
+    'Component/s': string[];
+    'Due Date': string;
+    Votes: string;
+    Labels: string[];
+    Description: string;
+    Environment: string;
+    Watchers: string[];
+    'Log Work': string[];
+    'Original Estimate': string;
+    'Remaining Estimate': string;
+    'Time Spent': string;
+    'Work Ratio': string;
+    'Σ Original Estimate': string;
+    'Σ Remaining Estimate': string;
+    'Σ Time Spent': string;
+    'Security Level': string;
+    'Inward issue link (Blocks)': string;
+    'Inward issue link (Duplicate)': string;
+    'Inward issue link (Relates)': string[];
+    'Outward issue link (Relates)': string[];
+    Attachment: string[];
+    'Custom field (Bug Info:)': string;
+    'Custom field (Contact Info:)': string;
+    'Custom field (Environment Info:)': string;
+    'Custom field (Epic Colour)': string;
+    'Custom field (Epic Link)': string;
+    'Custom field (Epic Name)': string;
+    'Custom field (Epic Status)': string;
+    'Custom field (NDPR Score)': string;
+    'Custom field (Opportunity value)': string;
+    'Custom field (Rank)': string;
+    'Custom field (Reproduce Info:)': string;
+    Sprint: string;
+    Comment: string[];
+  }
+// const file = fs.createReadStream(
+let filePath = 
+"ND-Jira 2023-10-19T21_54_41+0300.csv";
+let date = "19/Oct/23"
+const parser = parse({ columns: true, group_columns_by_name: true, trim: true, delimiter: ";" }, (err, records:CsvLine[]) => {
+    // console.log(records[0]["Log Work"][0])
+    console.log(
+        records
+            .map(record=>({  Id: record["Issue key"]
+                            ,Summary: record.Summary
+                            ,LogWork: record["Log Work"]
+                                .filter(log=>log.split(";").find(logsplit=>logsplit.includes(date)))
+                                .map(log=>log.replace(/(\r\n\s*)+/g, '\r\n'))
+                            ,TotalLogWorkHour: record["Log Work"]
+                                .filter(log=>log.split(";").find(logsplit=>logsplit.includes(date)))
+                                // .map(log=>{console.log(log); return log;})
+                                .map(log=>(parseInt(log.split(';')[log.split(';').length - 1])/60/60).toFixed(2))
+                            ,Assignee: record.Assignee
+                            ,Comments: record.Comment
+                                .filter(comment=>comment.split(";").find(commentsplit=>commentsplit.includes(date)))
+                                .map(comment=>comment.replace(/(\r\n\s*)+/g, '\r\n'))
+                    }))
+            .flatMap(record=>record)
+            .filter(record=>record.LogWork.length > 0 && record.Comments.length > 0)
+            // .map(x=>x.LogWork)
+            
+            )
+    return (JSON.stringify(records));
+});
+console.log(fs.existsSync(filePath))
+let res = fs.createReadStream(filePath).pipe(parser);
+
